@@ -10,6 +10,7 @@
 (defvar greyhound/messages nil)
 (defvar greyhound/closed nil)
 (defvar greyhound/process nil)
+(defvar greyhound/websocket nil)
 ; (defvar greyhound/executable "greyhound-search")
 (defvar greyhound/executable "/home/tsutsumi/workspace/greyhound-search/greyhound-search")
 
@@ -34,8 +35,8 @@
 (defun greyhound/stop ()
   "Stop the greyhound server"
   (interactive)
-  (greyhound/close-websocket)
   (greyhound/stop-server)
+  (greyhound/close-websocket)
 )
 
 ;;(websocket-openp greyhound/start)
@@ -45,24 +46,36 @@
 
 (defun greyhound/start-server ()
   "start the greyhound server"
-  (unless greyhound/process 
-    (setq (start-process 
-           "greyhound" 
-           "*greyhound*" 
-           greyhound/executable))))
+  (unless (or greyhound/process (not (process-live-p greyhound/process)))
+    (setq greyhound/process (start-process 
+                             "greyhound" 
+                             "*greyhound*" 
+                             greyhound/executable))))
 
 (defun greyhound/stop-server ()
   "stop the greyhound server"
   (if greyhound/process
-    (setq greyhound/process
-          (stop-process greyhound/process))))
+      (kill-process greyhound/process))
+)
 
 ;; greyhound websocket methods
 
 (defun greyhound/open-websocket ()
   "open the greyhound websocket"
+  (unless greyhound/websocket
+   (setq greyhound/websocket 
+         (websocket-open 
+          greyhound/server
+          :on-message (lambda (websocket frame)
+                        (push (websocket-frame-payload frame) greyhound/messages)
+                        (message "ws frame: %S" (websocket-frame-payload frame))
+                        (error "Test error (expected)"))
+          :on-close (lambda (websocket) (setq greyhound/closed t))))
+   )
 )
 
 (defun greyhound/close-websocket ()
   "close the greyhound websocket"
+  (if greyhound/websocket
+      (setq greyhound/websocket (websocket-close greyhound/websocket)))
 )

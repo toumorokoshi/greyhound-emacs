@@ -29,6 +29,7 @@
   "Start and start the websocket communication with the greyhound server"
   (interactive)
   (greyhound/start-server)
+  (sleep-for 0 100)
   (greyhound/open-websocket)
 )
 
@@ -46,7 +47,7 @@
 
 (defun greyhound/start-server ()
   "start the greyhound server"
-  (unless (or greyhound/process (not (process-live-p greyhound/process)))
+  (unless (and greyhound/process (process-live-p greyhound/process))
     (setq greyhound/process (start-process 
                              "greyhound" 
                              "*greyhound*" 
@@ -77,5 +78,6 @@
 (defun greyhound/close-websocket ()
   "close the greyhound websocket"
   (if greyhound/websocket
-      (setq greyhound/websocket (websocket-close greyhound/websocket)))
+      (if (websocket-close greyhound/websocket)
+          (setq greyhound/websocket nil)))
 )

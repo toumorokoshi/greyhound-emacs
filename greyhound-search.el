@@ -4,13 +4,14 @@
 ;; * 'origin' on emacs websocket needs an http attached to it...
 
 (require 'websocket)
+(require 'json)
 (require 'cl)
 
 (defvar greyhound/server "ws://127.0.0.1:8081/socket")
-(defvar greyhound/messages nil)
-(defvar greyhound/closed nil)
-(defvar greyhound/process nil)
-(defvar greyhound/websocket nil)
+(defvar greyhound/messages nil) ; the message queue that handles responses
+(defvar greyhound/process nil) ; the handle for the process
+(defvar greyhound/websocket nil) ; the handle for the websocket
+(defvar greyhound/callback nil) ; the callback function that parses output
 ; (defvar greyhound/executable "greyhound-search")
 (defvar greyhound/executable "/home/tsutsumi/workspace/greyhound-search/greyhound-search")
 
@@ -38,6 +39,24 @@
   (interactive)
   (greyhound/stop-server)
   (greyhound/close-websocket)
+)
+
+(defun greyhound/add-project ()
+  "Add a project to the greyhound-server"
+  (interactive)
+  (let ((cwd (file-name-directory (or load-file-name buffer-file-name))))
+    (websocket-send-text greyhound/websocket 
+                         (json-encode (list :action "add_project"
+                                            :querydata (list :name "test" :path cwd)))
+                         )
+    )
+)
+
+(defun greyhound/list-projects ()
+  "List all of the projects in existance"
+  (interactive)
+  (websocket-send-text greyhound/websocket
+                       (json-encode (list :action "list_projects")))
 )
 
 ;;(websocket-openp greyhound/start)

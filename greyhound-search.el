@@ -11,7 +11,6 @@
 (defvar greyhound/messages nil) ; the message queue that handles responses
 (defvar greyhound/process nil) ; the handle for the process
 (defvar greyhound/websocket nil) ; the handle for the websocket
-(defvar greyhound/callback nil) ; the callback function that parses output
 ; (defvar greyhound/executable "greyhound-search")
 (defvar greyhound/executable "/home/tsutsumi/workspace/greyhound-search/greyhound-search")
 
@@ -44,6 +43,8 @@
 (defun greyhound/add-project ()
   "Add a project to the greyhound-server"
   (interactive)
+  (defun greyhound/callback (returnvalue) 
+    (message "Success!")
   (let ((cwd (file-name-directory (or load-file-name buffer-file-name))))
     (websocket-send-text greyhound/websocket 
                          (json-encode (list :action "add_project"
@@ -55,9 +56,46 @@
 (defun greyhound/list-projects ()
   "List all of the projects in existance"
   (interactive)
+  (defun greyhound/callback (projectlist) 
+    (message "%s" projectlist))
   (websocket-send-text greyhound/websocket
                        (json-encode (list :action "list_projects")))
 )
+
+(defun greyhound/find-file (project match)
+  "Search the <project> in greyhound for the string <match>"
+  (interactive)
+  (defun greyhound/callback (result) 
+    (message "%s" result))
+  (websocket-send-text greyhound/websocket
+                       (json-encode (list :action "query"
+                                          :querydata (list :project project :query match))))
+)
+; SANDBOX
+(minibuffer-message "hello")
+(minibuffer-with-setup-hook 
+    (lambda ()
+      (message "hello")))
+
+(setq tmp '("cat" "dog" "fish"))
+(index '("cat" "dog" "fish"))
+
+(minibuffer-with-setup-hook 'minibuffer-complete
+  (completing-read (concat "Pick one (" 
+                           (mapconcat 'identity (all-completions "" tmp) " ") 
+                           "): ") h
+                   tmp))
+(set-window-text
+; SANDBOX
+(let ((root-dir (file-name-as-directory "."))
+      (index (fiplr-get-index 'files root-dir nil))
+      (file (minibuffer-with-setup-hook
+                (lambda ()
+                  (fiplr-mode 1))
+               (grizzl-completing-read (format "Find in project (%s)" root-dir)
+                                       index)))))
+
+
 
 ;;(websocket-openp greyhound/start)
 ;;(websocket-send-text greyhound/start "{\"action\": \"query\", \"queryData\": {\"project\": \"statics\", \"query\": \"t\"}}")
@@ -88,8 +126,9 @@
           greyhound/server
           :on-message (lambda (websocket frame)
                         (push (websocket-frame-payload frame) greyhound/messages)
-                        (message "ws frame: %S" (websocket-frame-payload frame))
-                        (error "Test error (expected)"))
+                        (greyhound/callback (let ((json-object-type 'plist)) 
+                                              (json-read-from-string (websocket-frame-payload frame)))))
+                        ;;(message "ws frame: %S" (websocket-frame-payload frame))
           :on-close (lambda (websocket) (setq greyhound/closed t))))
    )
 )

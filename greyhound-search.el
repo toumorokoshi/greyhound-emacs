@@ -6,6 +6,7 @@
 (require 'websocket)
 (require 'json)
 (require 'cl)
+(require 'cl-lib)
 
 (defvar greyhound/server "ws://127.0.0.1:8081/socket")
 (defvar greyhound/messages nil) ; the message queue that handles responses
@@ -72,10 +73,45 @@
                                           :querydata (list :project project :query match))))
 )
 ; SANDBOX
-(minibuffer-message "hello")
-(minibuffer-with-setup-hook 
-    (lambda ()
-      (message "hello")))
+(defun grizzl-format-prompt-line (prompt)
+  "Returns a string to render a full-width prompt in `grizzl-completing-read'."
+  (let* ((count 5)
+         (match-info (format " (%d candidate%s) ---- *-"
+                             count (if (= count 1) "" "s"))))
+    (concat (propertize (format "-*%s *-" prompt) 'face 'modeline-inactive)
+            (propertize " "
+                        'face    'modeline-inactive
+                        'display `(space :align-to (- right
+                                                      ,(1+ (length match-info)))))
+            (propertize match-info 'face 'modeline-inactive))))
+(minibuffer-with-
+
+(defun greyhound/sandbox ()
+  (minibuffer-with-setup-hook 
+      (lambda ()
+        (message "test")
+        (add-hook 'post-command-hook (lambda () (message "testyusuke")))
+        (add-hook 'minibuffer-exit-hook (lambda ()
+        ;; (lexical-let*
+        ;;     ((gshookfun (lambda ()
+        ;;                   (message "testyusuke")
+        ;;                   (setq *greyhound-result* "test\nthis\nnoise")
+        ;;                   (overlay-put (make-overlay (point-min) (point-min))
+        ;;                                'before-string
+        ;;                                "test\nthis\noise")
+        ;;                   (set-window-text-height nil 3)
+        ;;                   ))
+        ;;      (gsexitfun (lambda ()
+        ;;                   (remove-hook 'post-command-hook hookfun nil t)
+        ;;                   ))
+        ;;      (add-hook 'minibuffer-exit-hook gsexitfun nil t)
+        ;;      (add-hook 'post-command-hook gshookfun nil t)))
+        )
+    (read-from-minibuffer ">>> ")
+    "testbufferbody"
+    )
+)
+
 
 (setq tmp '("cat" "dog" "fish"))
 (index '("cat" "dog" "fish"))
@@ -85,8 +121,8 @@
                            (mapconcat 'identity (all-completions "" tmp) " ") 
                            "): ") h
                    tmp))
-(set-window-text
-; SANDBOX
+(delete-all-overlays)
+
 (let ((root-dir (file-name-as-directory "."))
       (index (fiplr-get-index 'files root-dir nil))
       (file (minibuffer-with-setup-hook
@@ -94,6 +130,10 @@
                   (fiplr-mode 1))
                (grizzl-completing-read (format "Find in project (%s)" root-dir)
                                        index)))))
+(
+
+; SANDBOX
+th
 
 
 
